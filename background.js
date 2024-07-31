@@ -111,7 +111,8 @@ setInterval(() => {
 
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.command === 'getTimeSpent') {
-    sendResponse(timeSpent);
+    const sortedTimeSpent = Object.entries(timeSpent).sort(([, a], [, b]) => b - a);
+    sendResponse(sortedTimeSpent);
   }
 });
 
