@@ -40,5 +40,5 @@ function refreshTimes() {
 
 document.addEventListener('DOMContentLoaded', () => {
   refreshTimes();
-  setInterval(refreshTimes, 1000); // Refresh every second
+  setInterval(refreshTimes, 1000); 
 });

@@ -3,10 +3,17 @@ let startTime = null;
 let timeSpent = {};
 let notificationSent = {};
 let today = new Date().toDateString();
+const TRACKING_INTERVAL = 1000; // Update time every second
 
 function getDomain(url) {
   const a = document.createElement('a');
   a.href = url;
+
+  // Skip internal pages like settings.html
+  if (a.pathname.includes('settings.html') || a.pathname.includes('otherMiscPage.html')) {
+    return null;
+  }
+
   let domain = a.hostname.replace('www.', '');
   const parts = domain.split('.');
   if (parts.length > 2) {
@@ -34,6 +41,7 @@ function updateTimeSpent(domain) {
       notificationSent[activeDomain] = hoursSpent;
     }
   }
+
   activeDomain = domain;
   startTime = Date.now();
   saveTimeSpent();
@@ -77,6 +85,19 @@ function loadTimeSpent() {
   });
 }
 
+function startTracking() {
+  setInterval(() => {
+    checkForDailyReset();
+    saveTimeSpent();
+  }, 60 * 1000); // Check daily reset every minute
+
+  setInterval(() => {
+    if (activeDomain !== null && startTime !== null) {
+      updateTimeSpent(activeDomain); // Update time every second
+    }
+  }, TRACKING_INTERVAL);
+}
+
 browser.tabs.onActivated.addListener(activeInfo => {
   browser.tabs.get(activeInfo.tabId).then(tab => {
     const domain = getDomain(tab.url);
@@ -104,11 +125,6 @@ browser.windows.onFocusChanged.addListener(windowId => {
   }
 });
 
-setInterval(() => {
-  checkForDailyReset();
-  saveTimeSpent();
-}, 60 * 1000);
-
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.command === 'getTimeSpent') {
     const sortedTimeSpent = Object.entries(timeSpent).sort(([, a], [, b]) => b - a);
@@ -117,3 +133,4 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 loadTimeSpent();
+startTracking();
