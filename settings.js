@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = labels.map((day, index) => {
             const dayData = weekData[index] || {};
             const totalTime = Object.values(dayData).reduce((sum, time) => sum + time, 0);
-            return totalTime / (1000 * 60 * 60); // Convert to hours
+            return totalTime / (1000 * 60 * 60);
         });
 
         new Chart(ctx, {

@@ -5,36 +5,79 @@ function formatTime(ms) {
   return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
 }
 
-function displayTimes(sortedTimes) {
-  const tabTimesDiv = document.getElementById('tabTimes');
-  tabTimesDiv.innerHTML = '';
-
+function updateTimes(sortedTimes) {
   let totalTime = 0;
 
   sortedTimes.forEach(([domain, time]) => {
-    const div = document.createElement('div');
-    div.classList.add('tab-time');
-    const domainDiv = document.createElement('div');
-    domainDiv.textContent = domain;
-    const timeDiv = document.createElement('div');
-    timeDiv.textContent = formatTime(time);
-    div.appendChild(domainDiv);
-    div.appendChild(timeDiv);
-    tabTimesDiv.appendChild(div);
-
     totalTime += time;
+
+    browser.storage.local.get('hiddenDomains').then(result => {
+      const hiddenDomains = result.hiddenDomains || {};
+      if (hiddenDomains[domain]) return;
+
+      let timeDiv = document.getElementById(`time-${domain}`);
+      let domainDiv = document.getElementById(`domain-${domain}`);
+      
+      if (!timeDiv || !domainDiv) {
+        const div = document.createElement('div');
+        div.classList.add('tab-time');
+
+        const closeBtn = document.createElement('span');
+        closeBtn.textContent = 'X';
+        closeBtn.classList.add('close-btn');
+        closeBtn.addEventListener('click', () => {
+          hideDomain(domain);
+        });
+
+        domainDiv = document.createElement('div');
+        domainDiv.id = `domain-${domain}`;
+        domainDiv.textContent = domain;
+
+        timeDiv = document.createElement('div');
+        timeDiv.id = `time-${domain}`;
+        timeDiv.textContent = formatTime(time);
+
+        div.appendChild(closeBtn);
+        div.appendChild(domainDiv);
+        div.appendChild(timeDiv);
+        document.getElementById('tabTimes').appendChild(div);
+      } else {
+        timeDiv.textContent = formatTime(time);
+      }
+    });
   });
 
-  const totalDiv = document.createElement('div');
-  totalDiv.classList.add('tab-time');
-  totalDiv.style.fontWeight = 'bold';
-  totalDiv.textContent = `Total Time: ${formatTime(totalTime)}`;
-  tabTimesDiv.appendChild(totalDiv);
+  const totalDiv = document.getElementById('total-time');
+  if (!totalDiv) {
+    const newTotalDiv = document.createElement('div');
+    newTotalDiv.classList.add('tab-time');
+    newTotalDiv.style.fontWeight = 'bold';
+    newTotalDiv.id = 'total-time';
+    newTotalDiv.textContent = `Total Time: ${formatTime(totalTime)}`;
+    document.getElementById('tabTimes').appendChild(newTotalDiv);
+  } else {
+    totalDiv.textContent = `Total Time: ${formatTime(totalTime)}`;
+  }
+}
+
+function hideDomain(domain) {
+  browser.storage.local.get('hiddenDomains').then(result => {
+    const hiddenDomains = result.hiddenDomains || {};
+    hiddenDomains[domain] = true;
+    browser.storage.local.set({ hiddenDomains }).then(() => {
+      const domainDiv = document.getElementById(`domain-${domain}`);
+      const timeDiv = document.getElementById(`time-${domain}`);
+      if (domainDiv && timeDiv) {
+        domainDiv.parentElement.remove(); 
+      }
+      refreshTimes();
+    });
+  });
 }
 
 function refreshTimes() {
   browser.runtime.sendMessage({ command: 'getTimeSpent' }).then(response => {
-    displayTimes(response);
+    updateTimes(response);
   });
 }
 
