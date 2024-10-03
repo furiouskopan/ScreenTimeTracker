@@ -12,3 +12,28 @@ h1 {
 canvas {
     max-width: 100%;
 }
+#hiddenDomainsContainer {
+    margin-top: 20px;
+}
+
+.hidden-domain-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+.undo-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.undo-btn:hover {
+    background-color: #218838;
+}
+
