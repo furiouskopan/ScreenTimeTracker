@@ -10,8 +10,14 @@ h1 {
 }
 
 canvas {
-    max-width: 100%;
+    width: 80%; /* Adjust the width to 80% of its container */
+    height: auto; /* Allow the height to adjust automatically */
+    max-width: 600px; /* Set a maximum width for the chart */
+    max-height: 300px; /* Set a maximum height for the chart */
+    border: 1px solid #ccc; /* Optional: add a border for better visibility */
+    margin-bottom: 20px;
 }
+
 #hiddenDomainsContainer {
     margin-top: 20px;
 }
@@ -36,4 +42,3 @@ canvas {
 .undo-btn:hover {
     background-color: #218838;
 }
-
