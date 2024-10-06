@@ -30,20 +30,24 @@ function updateTimeSpent(domain) {
 
     if (!timeSpent[activeDomain]) {
       timeSpent[activeDomain] = 0;
-      notificationSent[activeDomain] = 0; // Initialize notification tracking
     }
 
+    // Update the time spent for the active domain
     timeSpent[activeDomain] += elapsedTime;
 
+    // Handle notifications
     const hoursSpent = Math.floor(timeSpent[activeDomain] / (1000 * 60 * 60));
-    if (hoursSpent > notificationSent[activeDomain]) {
+    if (hoursSpent > (notificationSent[activeDomain] || 0)) {
       sendNotification(activeDomain, hoursSpent);
       notificationSent[activeDomain] = hoursSpent;
     }
   }
 
+  // Update active domain and reset start time
   activeDomain = domain;
   startTime = Date.now();
+
+  // Save time spent to storage
   saveTimeSpent();
 }
 
@@ -68,64 +72,43 @@ function checkForDailyReset() {
 }
 
 function saveTimeSpent() {
-  // Get current day of the week (0 = Sunday, 6 = Saturday)
   const todayIndex = new Date().getDay();
 
   browser.storage.local.get('thisWeek').then(result => {
-      let thisWeek = result.thisWeek || Array(7).fill({});
+    let thisWeek = result.thisWeek || Array(7).fill({});
 
-      // Ensure deep cloning of objects to avoid reference issues
-      thisWeek = thisWeek.map(day => ({ ...day }));
+    // Ensure deep cloning of objects to avoid reference issues
+    thisWeek = thisWeek.map(day => ({ ...day }));
 
-      // Update today's time data (assuming `timeSpent` contains time spent on each domain)
-      if (!thisWeek[todayIndex]) {
-          thisWeek[todayIndex] = {};
-      }
+    // Ensure that today's data exists
+    if (!thisWeek[todayIndex]) {
+      thisWeek[todayIndex] = {};
+    }
 
-      for (let domain in timeSpent) {
-          if (thisWeek[todayIndex][domain]) {
-              thisWeek[todayIndex][domain] += timeSpent[domain];
-          } else {
-              thisWeek[todayIndex][domain] = timeSpent[domain];
-          }
-      }
+    // Directly set the cumulative time spent on each domain for today
+    for (let domain in timeSpent) {
+      thisWeek[todayIndex][domain] = timeSpent[domain];
+    }
 
-      browser.storage.local.set({ thisWeek });
+    // Persist the updated week data
+    browser.storage.local.set({ thisWeek });
   });
 }
-function simulateWeeklyData() {
-  const simulatedWeekData = [
-      { 'example.com': 5000000, 'another-site.com': 2000000 }, // Sunday
-      { 'example.com': 4000000 }, // Monday
-      {}, // Tuesday
-      { 'third-site.com': 6000000 }, // Wednesday
-      {}, // Thursday
-      {}, // Friday
-      { 'fourth-site.com': 3000000 }, // Saturday
-  ];
-
-  browser.storage.local.set({ thisWeek: simulatedWeekData }).then(() => {
-      console.log('Simulated weekly data saved.');
-  });
-}
-
-// Call this function to simulate data
-simulateWeeklyData();
-
 
 function loadTimeSpent() {
-  browser.storage.local.get(['timeSpent', 'today', 'notificationSent']).then(result => {
-    if (result.timeSpent) {
-      timeSpent = result.timeSpent;
-    }
-    if (result.today && result.today === today) {
-      today = result.today;
+  browser.storage.local.get(['thisWeek', 'notificationSent']).then(result => {
+    if (result.thisWeek) {
+      const todayIndex = new Date().getDay();
+      timeSpent = result.thisWeek[todayIndex] || {};
+    } else {
+      timeSpent = {};
     }
     if (result.notificationSent) {
-      notificationSent = result.notificationSent;
+      notificationSent = result.notificationSent || {};
     }
   });
 }
+
 
 function startTracking() {
   setInterval(() => {

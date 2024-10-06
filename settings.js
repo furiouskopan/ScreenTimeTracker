@@ -1,15 +1,16 @@
 import Chart from 'chart.js/auto';
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Load the weekly data and render the chart
+// Load time spent without modifying the stored data
+function loadWeeklyDataForDisplay() {
     browser.storage.local.get('thisWeek').then(result => {
-        if (result.thisWeek) {
-            const weekData = result.thisWeek;
-            renderWeeklyChart(weekData);
-            displayTopSites(weekData);
-            displayDailyTime(weekData);
-        }
+      if (result.thisWeek) {
+        const weekData = result.thisWeek;
+        renderWeeklyChart(weekData);  // Display the chart
+        displayTopSites(weekData);    // Display top sites
+        displayDailyTime(weekData);   // Display daily breakdown
+      }
     });
+  }
 
     // Load the hidden domains and display them with an undo option
     browser.storage.local.get('hiddenDomains').then(result => {
@@ -66,51 +67,52 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-
-   // Function to display top 5 most used sites
-   function displayTopSites(weekData) {
+function convertMsToHours(ms) {
+    return (ms / (1000 * 60 * 60)).toFixed(2); // Convert milliseconds to hours and round to 2 decimal places
+}
+function displayTopSites(weekData) {
     const domainTimes = {};
-
-    // Aggregate time spent on each domain across all days, but ensure it's not over-accumulated
+  
     weekData.forEach(dayData => {
-        Object.keys(dayData).forEach(domain => {
-            if (!domainTimes[domain]) {
-                domainTimes[domain] = 0; // Initialize time for the domain
-            }
-            domainTimes[domain] = dayData[domain]; // Use the value directly instead of adding it up repeatedly
-        });
+      for (let domain in dayData) {
+        if (!domainTimes[domain]) {
+          domainTimes[domain] = 0;
+        }
+        domainTimes[domain] += dayData[domain];
+      }
     });
-
-    // Sort domains by total time spent (descending order)
+  
+    // Now domainTimes contains total time per domain over the week
     const sortedDomains = Object.entries(domainTimes)
-        .sort(([, timeA], [, timeB]) => timeB - timeA)
-        .slice(0, 5); // Get top 5
-
-    // Display top 5 domains
+      .sort(([, timeA], [, timeB]) => timeB - timeA)
+      .slice(0, 5);
+  
+    // Display the top 5 sites
     const topSitesContainer = document.createElement('div');
     topSitesContainer.innerHTML = '<h2>Top 5 Sites This Week</h2>';
-    
+  
     sortedDomains.forEach(([domain, time]) => {
-        const timeInHours = (time / (1000 * 60 * 60)).toFixed(2); // Convert to hours
-        const domainDiv = document.createElement('div');
-        domainDiv.textContent = `${domain}: ${timeInHours} hours`;
-        topSitesContainer.appendChild(domainDiv);
+      const timeInHours = convertMsToHours(time);
+      const domainDiv = document.createElement('div');
+      domainDiv.textContent = `${domain}: ${timeInHours} hours`;
+      topSitesContainer.appendChild(domainDiv);
     });
-
+  
     document.body.appendChild(topSitesContainer);
-}
+  }
+  
 
-// Function to display time spent each day
+// Function to display time spent per day without altering the saved data
 function displayDailyTime(weekData) {
     const labels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-    // Display time spent for each day
+    // Simply display the time spent for each day, without modifying the saved data
     const dailyTimeContainer = document.createElement('div');
     dailyTimeContainer.innerHTML = '<h2>Time Spent Per Day</h2>';
     
     weekData.forEach((dayData, index) => {
         const totalTime = Object.values(dayData).reduce((sum, time) => sum + time, 0);
-        const timeInHours = (totalTime / (1000 * 60 * 60)).toFixed(2); // Convert to hours
+        const timeInHours = convertMsToHours(totalTime); // Use conversion function
         const dayDiv = document.createElement('div');
         dayDiv.textContent = `${labels[index]}: ${timeInHours} hours`;
         dailyTimeContainer.appendChild(dayDiv);
@@ -118,8 +120,6 @@ function displayDailyTime(weekData) {
 
     document.body.appendChild(dailyTimeContainer);
 }
-});
-    
     function renderWeeklyChart(weekData) {
         console.log('Week Data:', weekData); // Debugging line to ensure data is passed correctly
     
