@@ -104,7 +104,7 @@ function displayTopSites(weekData) {
 
 // Function to display time spent per day without altering the saved data
 function displayDailyTime(weekData) {
-    const labels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
     // Simply display the time spent for each day, without modifying the saved data
     const dailyTimeContainer = document.createElement('div');
@@ -124,7 +124,7 @@ function displayDailyTime(weekData) {
         console.log('Week Data:', weekData); // Debugging line to ensure data is passed correctly
     
         const ctx = document.getElementById('weeklyChart').getContext('2d');
-        const labels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         
         const data = labels.map((day, index) => {
             const dayData = weekData[index] || {};
