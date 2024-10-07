@@ -15289,12 +15289,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Function to display time spent each day
   function displayDailyTime(weekData) {
-    var labels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    var labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
     // Display time spent for each day
     var dailyTimeContainer = document.createElement('div');
     dailyTimeContainer.innerHTML = '<h2>Time Spent Per Day</h2>';
-    weekData.forEach(function (dayData, index) {
+
+    // Rearranging weekData so that Monday is first
+    var adjustedWeekData = weekData.slice(1).concat(weekData[0]); // Move Sunday to the end
+
+    adjustedWeekData.forEach(function (dayData, index) {
       var totalTime = Object.values(dayData).reduce(function (sum, time) {
         return sum + time;
       }, 0);
@@ -15310,9 +15314,13 @@ function renderWeeklyChart(weekData) {
   console.log('Week Data:', weekData); // Debugging line to ensure data is passed correctly
 
   var ctx = document.getElementById('weeklyChart').getContext('2d');
-  var labels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  var labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  // Rearranging weekData so that Monday is first
+  var adjustedWeekData = weekData.slice(1).concat(weekData[0]); // Move Sunday to the end
+
   var data = labels.map(function (day, index) {
-    var dayData = weekData[index] || {};
+    var dayData = adjustedWeekData[index] || {};
     var totalTime = Object.values(dayData).reduce(function (sum, time) {
       return sum + time;
     }, 0);

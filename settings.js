@@ -1,16 +1,16 @@
 import Chart from 'chart.js/auto';
+import * as XLSX from 'xlsx';
 
-// Load time spent without modifying the stored data
-function loadWeeklyDataForDisplay() {
+document.addEventListener('DOMContentLoaded', function() {
+    // Load the weekly data and render the chart
     browser.storage.local.get('thisWeek').then(result => {
-      if (result.thisWeek) {
-        const weekData = result.thisWeek;
-        renderWeeklyChart(weekData);  // Display the chart
-        displayTopSites(weekData);    // Display top sites
-        displayDailyTime(weekData);   // Display daily breakdown
-      }
+        if (result.thisWeek) {
+            const weekData = result.thisWeek;
+            renderWeeklyChart(weekData);
+            displayTopSites(weekData);
+            displayDailyTime(weekData);
+        }
     });
-  }
 
     // Load the hidden domains and display them with an undo option
     browser.storage.local.get('hiddenDomains').then(result => {
@@ -67,52 +67,54 @@ function loadWeeklyDataForDisplay() {
             });
         });
     }
-function convertMsToHours(ms) {
-    return (ms / (1000 * 60 * 60)).toFixed(2); // Convert milliseconds to hours and round to 2 decimal places
-}
-function displayTopSites(weekData) {
+
+   // Function to display top 5 most used sites
+   function displayTopSites(weekData) {
     const domainTimes = {};
-  
+
+    // Aggregate time spent on each domain across all days
     weekData.forEach(dayData => {
-      for (let domain in dayData) {
-        if (!domainTimes[domain]) {
-          domainTimes[domain] = 0;
-        }
-        domainTimes[domain] += dayData[domain];
-      }
+        Object.keys(dayData).forEach(domain => {
+            if (!domainTimes[domain]) {
+                domainTimes[domain] = 0;
+            }
+            domainTimes[domain] += dayData[domain];
+        });
     });
-  
-    // Now domainTimes contains total time per domain over the week
+
+    // Sort domains by total time spent (descending order)
     const sortedDomains = Object.entries(domainTimes)
-      .sort(([, timeA], [, timeB]) => timeB - timeA)
-      .slice(0, 5);
-  
-    // Display the top 5 sites
+        .sort(([, timeA], [, timeB]) => timeB - timeA)
+        .slice(0, 5); // Get top 5
+
+    // Display top 5 domains
     const topSitesContainer = document.createElement('div');
     topSitesContainer.innerHTML = '<h2>Top 5 Sites This Week</h2>';
-  
+    
     sortedDomains.forEach(([domain, time]) => {
-      const timeInHours = convertMsToHours(time);
-      const domainDiv = document.createElement('div');
-      domainDiv.textContent = `${domain}: ${timeInHours} hours`;
-      topSitesContainer.appendChild(domainDiv);
+        const timeInHours = (time / (1000 * 60 * 60)).toFixed(2); // Convert to hours
+        const domainDiv = document.createElement('div');
+        domainDiv.textContent = `${domain}: ${timeInHours} hours`;
+        topSitesContainer.appendChild(domainDiv);
     });
-  
-    document.body.appendChild(topSitesContainer);
-  }
-  
 
-// Function to display time spent per day without altering the saved data
+    document.body.appendChild(topSitesContainer);
+}
+
+// Function to display time spent each day
 function displayDailyTime(weekData) {
     const labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-    // Simply display the time spent for each day, without modifying the saved data
+    // Display time spent for each day
     const dailyTimeContainer = document.createElement('div');
     dailyTimeContainer.innerHTML = '<h2>Time Spent Per Day</h2>';
     
-    weekData.forEach((dayData, index) => {
+    // Rearranging weekData so that Monday is first
+    const adjustedWeekData = weekData.slice(1).concat(weekData[0]); // Move Sunday to the end
+
+    adjustedWeekData.forEach((dayData, index) => {
         const totalTime = Object.values(dayData).reduce((sum, time) => sum + time, 0);
-        const timeInHours = convertMsToHours(totalTime); // Use conversion function
+        const timeInHours = (totalTime / (1000 * 60 * 60)).toFixed(2); // Convert to hours
         const dayDiv = document.createElement('div');
         dayDiv.textContent = `${labels[index]}: ${timeInHours} hours`;
         dailyTimeContainer.appendChild(dayDiv);
@@ -120,38 +122,43 @@ function displayDailyTime(weekData) {
 
     document.body.appendChild(dailyTimeContainer);
 }
-    function renderWeeklyChart(weekData) {
-        console.log('Week Data:', weekData); // Debugging line to ensure data is passed correctly
+});
     
-        const ctx = document.getElementById('weeklyChart').getContext('2d');
-        const labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        
-        const data = labels.map((day, index) => {
-            const dayData = weekData[index] || {};
-            const totalTime = Object.values(dayData).reduce((sum, time) => sum + time, 0);
-            return totalTime / (1000 * 60 * 60); // Convert milliseconds to hours
-        });
-    
-        console.log('Chart Data:', data); // Debugging line to see if data is formatted correctly
-        
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Hours Spent',
-                    data: data,
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+function renderWeeklyChart(weekData) {
+    console.log('Week Data:', weekData); // Debugging line to ensure data is passed correctly
+
+    const ctx = document.getElementById('weeklyChart').getContext('2d');
+    const labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+    // Rearranging weekData so that Monday is first
+    const adjustedWeekData = weekData.slice(1).concat(weekData[0]); // Move Sunday to the end
+
+    const data = labels.map((day, index) => {
+        const dayData = adjustedWeekData[index] || {};
+        const totalTime = Object.values(dayData).reduce((sum, time) => sum + time, 0);
+        return totalTime / (1000 * 60 * 60); // Convert milliseconds to hours
+    });
+
+    console.log('Chart Data:', data); // Debugging line to see if data is formatted correctly
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Hours Spent',
+                data: data,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
                 }
             }
-        });
-    }
+        }
+    });
+}
