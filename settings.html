@@ -4,9 +4,20 @@
     <title>Screen Time Tracker - Settings</title>
     <link rel="stylesheet" href="settings.css">
     <script src="dist/bundle.js" type="module"></script>
+    <!-- <script src="https://kit.fontawesome.com/8c34403282.js" crossorigin="anonymous"></script> -->
 </head>
 <body>
     <h1>Weekly Trends</h1>
     <canvas id="weeklyChart" width="400" height="200"></canvas>
+    <div id="darkModeToggle" class="dark-mode-icon">
+        <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+            <path d="M21.77 14.73A8 8 0 1 1 12 2a8.94 8.94 0 0 0-.93.05A9 9 0 1 0 21.77 14.73z"/>
+        </svg>
+        <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" style="display: none;">
+            <path d="M12 4V2M12 22v-2M18.364 5.636l1.414-1.414M4.222 19.778l1.414-1.414M22 12h-2M4 12H2M18.364 18.364l1.414 1.414M4.222 4.222l1.414 1.414M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/>
+        </svg>
+    </div>
+    
+    
 </body>
 </html>

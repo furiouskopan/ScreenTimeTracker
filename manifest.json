@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Screen Time Tracker",
-  "version": "1.0",
+  "version": "2.0",
   "description": "Tracks the time you spend on different websites.",
   "permissions": ["tabs", "storage", "notifications"],
   "background": {
@@ -16,3 +16,4 @@
     "48": "icon.png"
   }
 }
+ 

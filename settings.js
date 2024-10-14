@@ -68,62 +68,70 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-   // Function to display top 5 most used sites
-   function displayTopSites(weekData) {
-    const domainTimes = {};
+    // Helper function to format milliseconds into "X hours Y minutes"
+    function formatTime(milliseconds) {
+        const totalMinutes = Math.floor(milliseconds / (1000 * 60));
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+    }
 
-    // Aggregate time spent on each domain across all days
-    weekData.forEach(dayData => {
-        Object.keys(dayData).forEach(domain => {
-            if (!domainTimes[domain]) {
-                domainTimes[domain] = 0;
-            }
-            domainTimes[domain] += dayData[domain];
+    // Function to display top 5 most used sites
+    function displayTopSites(weekData) {
+        const domainTimes = {};
+
+        // Aggregate time spent on each domain across all days
+        weekData.forEach(dayData => {
+            Object.keys(dayData).forEach(domain => {
+                if (!domainTimes[domain]) {
+                    domainTimes[domain] = 0;
+                }
+                domainTimes[domain] += dayData[domain];
+            });
         });
-    });
 
-    // Sort domains by total time spent (descending order)
-    const sortedDomains = Object.entries(domainTimes)
-        .sort(([, timeA], [, timeB]) => timeB - timeA)
-        .slice(0, 5); // Get top 5
+        // Sort domains by total time spent (descending order)
+        const sortedDomains = Object.entries(domainTimes)
+            .sort(([, timeA], [, timeB]) => timeB - timeA)
+            .slice(0, 5); // Get top 5
 
-    // Display top 5 domains
-    const topSitesContainer = document.createElement('div');
-    topSitesContainer.innerHTML = '<h2>Top 5 Sites This Week</h2>';
-    
-    sortedDomains.forEach(([domain, time]) => {
-        const timeInHours = (time / (1000 * 60 * 60)).toFixed(2); // Convert to hours
-        const domainDiv = document.createElement('div');
-        domainDiv.textContent = `${domain}: ${timeInHours} hours`;
-        topSitesContainer.appendChild(domainDiv);
-    });
+        // Display top 5 domains
+        const topSitesContainer = document.createElement('div');
+        topSitesContainer.innerHTML = '<h2>Top 5 Sites This Week</h2>';
+        
+        sortedDomains.forEach(([domain, time]) => {
+            const formattedTime = formatTime(time); // Format time
+            const domainDiv = document.createElement('div');
+            domainDiv.textContent = `${domain}: ${formattedTime}`;
+            topSitesContainer.appendChild(domainDiv);
+        });
 
-    document.body.appendChild(topSitesContainer);
-}
+        document.body.appendChild(topSitesContainer);
+    }
 
-// Function to display time spent each day
-function displayDailyTime(weekData) {
-    const labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    // Function to display time spent each day
+    function displayDailyTime(weekData) {
+        const labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-    // Display time spent for each day
-    const dailyTimeContainer = document.createElement('div');
-    dailyTimeContainer.innerHTML = '<h2>Time Spent Per Day</h2>';
-    
-    // Rearranging weekData so that Monday is first
-    const adjustedWeekData = weekData.slice(1).concat(weekData[0]); // Move Sunday to the end
+        // Display time spent for each day
+        const dailyTimeContainer = document.createElement('div');
+        dailyTimeContainer.innerHTML = '<h2>Time Spent Per Day</h2>';
+        
+        // Rearranging weekData so that Monday is first
+        const adjustedWeekData = weekData.slice(1).concat(weekData[0]); // Move Sunday to the end
 
-    adjustedWeekData.forEach((dayData, index) => {
-        const totalTime = Object.values(dayData).reduce((sum, time) => sum + time, 0);
-        const timeInHours = (totalTime / (1000 * 60 * 60)).toFixed(2); // Convert to hours
-        const dayDiv = document.createElement('div');
-        dayDiv.textContent = `${labels[index]}: ${timeInHours} hours`;
-        dailyTimeContainer.appendChild(dayDiv);
-    });
+        adjustedWeekData.forEach((dayData, index) => {
+            const totalTime = Object.values(dayData).reduce((sum, time) => sum + time, 0);
+            const formattedTime = formatTime(totalTime); // Format time
+            const dayDiv = document.createElement('div');
+            dayDiv.textContent = `${labels[index]}: ${formattedTime}`;
+            dailyTimeContainer.appendChild(dayDiv);
+        });
 
-    document.body.appendChild(dailyTimeContainer);
-}
+        document.body.appendChild(dailyTimeContainer);
+    }
 });
-    
+
 function renderWeeklyChart(weekData) {
     console.log('Week Data:', weekData); // Debugging line to ensure data is passed correctly
 
@@ -136,7 +144,7 @@ function renderWeeklyChart(weekData) {
     const data = labels.map((day, index) => {
         const dayData = adjustedWeekData[index] || {};
         const totalTime = Object.values(dayData).reduce((sum, time) => sum + time, 0);
-        return totalTime / (1000 * 60 * 60); // Convert milliseconds to hours
+        return totalTime; // Keep it in milliseconds for chart data
     });
 
     console.log('Chart Data:', data); // Debugging line to see if data is formatted correctly
@@ -147,7 +155,7 @@ function renderWeeklyChart(weekData) {
             labels: labels,
             datasets: [{
                 label: 'Hours Spent',
-                data: data,
+                data: data.map(time => time / (1000 * 60 * 60)), // Convert to hours for display
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                 borderColor: 'rgba(75, 192, 192, 1)',
                 borderWidth: 1
@@ -156,9 +164,128 @@ function renderWeeklyChart(weekData) {
         options: {
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    ticks: {
+                        callback: (value) => {
+                            return `${Math.floor(value)} hour${Math.floor(value) !== 1 ? 's' : ''}`; // Custom y-axis tick formatting
+                        }
+                    }
                 }
             }
         }
     });
 }
+
+
+// Function to export weekly data and top sites to an Excel file
+function exportToExcel(weekData, topSites) {
+    // Prepare data for the Excel file
+    const exportData = [];
+
+    // Add header row
+    exportData.push(['Day', 'Site', 'Time Spent (Hours)']);
+
+    // Add daily data
+    const labels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
+    weekData.forEach((dayData, dayIndex) => {
+        for (const domain in dayData) {
+            const timeSpent = convertMsToHours(dayData[domain]); // Convert to hours
+            exportData.push([labels[dayIndex], domain, timeSpent]);
+        }
+    });
+
+    // Add top sites
+    exportData.push([]); // Add an empty row
+    exportData.push(['Top 5 Sites This Week']);
+    exportData.push(['Site', 'Time Spent (Hours)']);
+    
+    topSites.forEach(([domain, time]) => {
+        const timeInHours = convertMsToHours(time);
+        exportData.push([domain, timeInHours]);
+    });
+
+    // Create a worksheet from the data
+    const worksheet = XLSX.utils.aoa_to_sheet(exportData);
+
+    // Create a new workbook and add the worksheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Weekly Data');
+
+    // Export the workbook to a file
+    XLSX.writeFile(workbook, 'Weekly_Screen_Time_Tracker.xlsx');
+}
+
+function convertMsToHours(ms) {
+    return (ms / (1000 * 60 * 60)).toFixed(2); // Convert milliseconds to hours and round to 2 decimal places
+}
+
+// Add an export button to your settings.html file (you can place it where appropriate)
+const exportButton = document.createElement('button');
+exportButton.textContent = 'Export to Excel';
+exportButton.addEventListener('click', () => {
+    // Fetch week data and top sites, then call exportToExcel
+    browser.storage.local.get('thisWeek').then(result => {
+        if (result.thisWeek) {
+            const weekData = result.thisWeek;
+            const topSites = getTopSites(weekData); // Create a function to extract top sites
+            exportToExcel(weekData, topSites);
+        }
+    });
+});
+
+document.body.appendChild(exportButton);
+
+// Helper function to get the top sites from week data
+function getTopSites(weekData) {
+    const domainTimes = {};
+    weekData.forEach(dayData => {
+        for (let domain in dayData) {
+            if (!domainTimes[domain]) {
+                domainTimes[domain] = 0;
+            }
+            domainTimes[domain] += dayData[domain];
+        }
+    });
+
+    // Sort and return the top 5 sites
+    return Object.entries(domainTimes)
+        .sort(([, timeA], [, timeB]) => timeB - timeA)
+        .slice(0, 5);
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const sunIcon = document.getElementById('sunIcon');
+    const moonIcon = document.getElementById('moonIcon');
+    const body = document.body;
+
+    // Load saved theme from local storage
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    if (currentTheme === 'dark') {
+        body.classList.add('dark-mode');
+        sunIcon.style.display = 'block';
+        moonIcon.style.display = 'none';
+    } else {
+        body.classList.add('light-mode');
+        moonIcon.style.display = 'block';
+        sunIcon.style.display = 'none';
+    }
+
+    // Toggle dark mode
+    darkModeToggle.addEventListener('click', function () {
+        if (body.classList.contains('dark-mode')) {
+            body.classList.replace('dark-mode', 'light-mode');
+            moonIcon.style.display = 'block';
+            sunIcon.style.display = 'none';
+            localStorage.setItem('theme', 'light');
+        } else {
+            body.classList.replace('light-mode', 'dark-mode');
+            sunIcon.style.display = 'block';
+            moonIcon.style.display = 'none';
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+});
+
+
